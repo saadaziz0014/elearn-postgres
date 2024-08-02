@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+model User {
+  id        Int      @id @unique @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String   @unique
+  password  String
+  isActive  Boolean  @default(true)
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Teacher   Teacher?
+  Student   Student?
+}
+
+model Teacher {
+  id             Int      @id @default(autoincrement())
+  specialization String
+  experience     Int
+  user           User     @relation(fields: [userId], references: [id])
+  userId         Int      @unique
+  Course         Course[]
+  isActive       Boolean  @default(true)
+}
+
+model Student {
+  id              Int              @id @default(autoincrement())
+  class           String
+  user            User             @relation(fields: [userId], references: [id])
+  userId          Int              @unique
+  isActive        Boolean          @default(true)
+  RegisterTeacher RegisterTeacher?
+  StudentCourses  StudentCourses[]
+}
+
+model Course {
+  id             Int              @id @default(autoincrement())
+  title          String
+  Teacher        Teacher          @relation(fields: [teacherId], references: [id])
+  teacherId      Int
+  isActive       Boolean          @default(true)
+  StudentCourses StudentCourses[]
+  CourseVideo    CourseVideo[]
+}
+
+model RegisterTeacher {
+  id             Int      @id @default(autoincrement())
+  Student        Student  @relation(fields: [studentId], references: [id])
+  studentId      Int      @unique
+  status         String   @default("PENDING")
+  specialization String
+  experience     Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model StudentCourses {
+  id                      Int                       @id @default(autoincrement())
+  Course                  Course                    @relation(fields: [courseId], references: [id])
+  courseId                Int
+  Student                 Student                   @relation(fields: [studentId], references: [id])
+  studentId               Int
+  enrolledDate            DateTime                  @default(now())
+  completedDate           DateTime
+  isActive                Boolean                   @default(true)
+  isCompleted             Boolean                   @default(false)
+  CourseCompletionRequest CourseCompletionRequest[]
+}
+
+model CourseVideo {
+  id       Int     @id @default(autoincrement())
+  title    String
+  url      String
+  Course   Course  @relation(fields: [courseId], references: [id])
+  courseId Int
+  isActive Boolean @default(true)
+}
+
+model CourseCompletionRequest {
+  id              Int            @id @default(autoincrement())
+  evidence        String
+  StudentCourses  StudentCourses @relation(fields: [studentCourseId], references: [id])
+  studentCourseId Int
+  status          String         @default("PENDING")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
